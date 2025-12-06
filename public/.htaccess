@@ -1,0 +1,29 @@
+# Allow direct access to models directory
+# This ensures React Router doesn't intercept model file requests
+# Works for both React Dev Server and Apache (Laragon)
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Allow direct access to model files (manifest and shard files)
+  RewriteCond %{REQUEST_URI} ^/models/ [NC]
+  RewriteRule ^ - [L]
+  
+  # Set proper MIME types for model files
+  <FilesMatch "\.(shard1|shard2|json)$">
+    Header set Content-Type "application/octet-stream"
+  </FilesMatch>
+  
+  # Allow access to files ending with -shard1, -shard2, etc.
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteCond %{REQUEST_URI} -shard[0-9]+$ [NC]
+  RewriteRule ^ - [L]
+</IfModule>
+
+# For files without extensions in models directory
+<DirectoryMatch "^/models/">
+  Options -Indexes
+  AllowOverride None
+  Require all granted
+</DirectoryMatch>

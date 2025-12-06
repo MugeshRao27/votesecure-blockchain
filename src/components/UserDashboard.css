@@ -1,0 +1,831 @@
+.user-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f7fc;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sidebar */
+.user-sidebar {
+  width: 280px;
+  background: linear-gradient(180deg, #003d80 0%, #0056b3 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px 20px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.user-info .avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-info strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.user-info p {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: left;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.menu-btn.active {
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Main Content */
+.user-main {
+  margin-left: 280px;
+  flex: 1;
+  padding: 30px;
+  width: calc(100% - 280px);
+}
+
+.section-header {
+  margin-bottom: 30px;
+}
+
+.section-header h2 {
+  font-size: 32px;
+  color: #0056b3;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.section-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* Elections Section */
+.elections-section {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.election-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.election-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.election-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(109, 93, 252, 0.15);
+  border-color: #0056b3;
+}
+
+.election-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.election-header h3 {
+  font-size: 22px;
+  color: #333;
+  font-weight: 700;
+  flex: 1;
+  margin-right: 15px;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.completed {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.upcoming {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.election-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  min-height: 60px;
+}
+
+.election-dates {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.date-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.date-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.date-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.view-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  background-color: #004099;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 86, 179, 0.4);
+}
+
+/* Candidates Section */
+.candidates-section {
+  animation: fadeIn 0.5s ease;
+}
+
+.back-btn {
+  padding: 10px 20px;
+  background: white;
+  color: #0056b3;
+  border: 2px solid #0056b3;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #0056b3;
+  color: white;
+  transform: translateX(-5px);
+}
+
+.vote-instructions {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+}
+
+.vote-instructions p {
+  color: #856404;
+  font-size: 14px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.candidate-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.candidate-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(109, 93, 252, 0.15);
+  border-color: #0056b3;
+}
+
+.candidate-image-container {
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.candidate-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.candidate-card:hover .candidate-image {
+  transform: scale(1.05);
+}
+
+.candidate-info {
+  padding: 20px;
+  flex: 1;
+}
+
+.candidate-info h3 {
+  font-size: 20px;
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.candidate-position {
+  color: #0056b3;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.candidate-party {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.candidate-bio {
+  color: #888;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.vote-btn {
+  margin: 0 20px 20px;
+  padding: 14px;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vote-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+}
+
+.vote-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.empty-state p {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.empty-subtitle {
+  font-size: 14px !important;
+  color: #bbb !important;
+}
+
+/* Voted Message */
+.voted-message {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+}
+
+.voted-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.voted-message h3 {
+  font-size: 24px;
+  color: #27ae60;
+  margin-bottom: 10px;
+}
+
+.voted-message p {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #004099;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 86, 179, 0.4);
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0056b3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* Vote History Section */
+.vote-history-section {
+  animation: fadeIn 0.5s ease;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 25px;
+}
+
+.history-card {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+  transition: all 0.3s ease;
+}
+
+.history-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(109, 93, 252, 0.15);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.history-header h3 {
+  font-size: 20px;
+  color: #333;
+  font-weight: 700;
+  flex: 1;
+  margin-right: 15px;
+}
+
+.history-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.history-candidate {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.candidate-mini-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.candidate-mini-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0056b3;
+}
+
+.candidate-mini-info strong {
+  display: block;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.candidate-mini-info p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.party-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #0056b3;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid #e6e9ff;
+}
+
+.vote-date {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Results Section */
+.results-section {
+  animation: fadeIn 0.5s ease;
+}
+
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(109, 93, 252, 0.15);
+}
+
+.stat-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0056b3;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.winner-banner {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+}
+
+.winner-icon {
+  font-size: 50px;
+}
+
+.winner-banner h3 {
+  font-size: 24px;
+  color: #856404;
+  margin: 0 0 5px 0;
+  font-weight: 700;
+}
+
+.winner-banner p {
+  color: #856404;
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.results-candidates {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(109, 93, 252, 0.1);
+  border: 2px solid #e6e9ff;
+}
+
+.results-candidates h3 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 25px;
+  font-weight: 700;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.result-item:hover {
+  background: #e9ecef;
+  border-color: #0056b3;
+}
+
+.result-item.winner {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-color: #ffd700;
+}
+
+.result-rank {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0056b3;
+  min-width: 50px;
+  text-align: center;
+}
+
+.result-item.winner .result-rank {
+  color: #856404;
+}
+
+.result-candidate-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.result-candidate-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0056b3;
+}
+
+.result-candidate-details h4 {
+  font-size: 18px;
+  color: #333;
+  margin: 0 0 5px 0;
+  font-weight: 700;
+}
+
+.result-candidate-details p {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 5px 0;
+}
+
+.party-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #0056b3;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.result-votes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.vote-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0056b3;
+}
+
+.vote-percentage {
+  font-size: 16px;
+  font-weight: 600;
+  color: #666;
+}
+
+.vote-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e6e9ff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.vote-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0056b3 0%, #007bff 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.result-item.winner .vote-bar {
+  background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .user-main {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .election-grid,
+  .candidate-grid,
+  .history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .results-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .result-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-votes {
+    width: 100%;
+    align-items: flex-start;
+  }
+}
+
