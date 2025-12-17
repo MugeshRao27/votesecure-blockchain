@@ -3,6 +3,96 @@ require_once '../config.php';
 require_once '../auth-helper.php';
 require_once '../email-service.php';
 
+/**
+ * Convert election title/ID to a safe CSV filename.
+ *
+ * Result format (examples):
+ *   - title "College Election 2025", id 5  -> election_5_college_election_2025_voters.csv
+ *   - title empty, id 10                  -> election_10_voters.csv
+ *
+ * This keeps one CSV per election, stored in csv_exports/.
+ */
+function electionTitleToFilename($electionTitle, $electionId) {
+    $electionId = intval($electionId);
+    if ($electionId <= 0) {
+        $electionId = 0;
+    }
+
+    $base = (string)$electionId;
+    if (!empty($electionTitle)) {
+        $slug = strtolower(trim($electionTitle));
+        $slug = preg_replace('/[^a-z0-9]+/i', '_', $slug);
+        $slug = trim($slug, '_');
+        if ($slug !== '') {
+            $base .= '_' . $slug;
+        }
+    }
+
+    // Fallback name if everything above fails
+    if ($base === '' || $base === '0') {
+        $base = 'election';
+    }
+
+    return 'election_' . $base . '_voters.csv';
+}
+
+/**
+ * Write or append a voter row to the election CSV stored in csv_exports/.
+ *
+ * Behaviour:
+ * - Creates one CSV per election in backend/api/csv_exports/
+ * - If the file is new: writes a header row
+ * - Always appends (never overwrites) a new line for each registered voter
+ * - Columns: Name, Email, DOB, Registration Timestamp
+ *
+ * Returns ['path' => ..., 'created' => bool, 'written' => bool]
+ * Throws on hard errors; caller should catch to avoid breaking registration.
+ */
+function appendVoterToCsv($electionTitle, $electionId, $name, $email, $dateOfBirth) {
+    $csvDir = __DIR__ . '/../csv_exports';
+    if (!is_dir($csvDir)) {
+        if (!mkdir($csvDir, 0777, true) && !is_dir($csvDir)) {
+            throw new Exception("Could not create csv_exports directory: {$csvDir}");
+        }
+    }
+    if (!is_writable($csvDir)) {
+        @chmod($csvDir, 0777);
+    }
+    if (!is_writable($csvDir)) {
+        throw new Exception("csv_exports directory is not writable: {$csvDir}");
+    }
+
+    // Generate a stable per‑election filename like:
+    //   csv_exports/election_5_college_election_2025_voters.csv
+    //   csv_exports/election_10_voters.csv
+    $filename = electionTitleToFilename($electionTitle ?? '', $electionId);
+    $csvPath = $csvDir . DIRECTORY_SEPARATOR . $filename;
+    $isNew = !file_exists($csvPath);
+
+    $fh = fopen($csvPath, 'ab');
+    if ($fh === false) {
+        throw new Exception("Could not open CSV file for writing: {$csvPath}");
+    }
+
+    // Add header if new
+    if ($isNew) {
+        fputcsv($fh, ['Name', 'Email', 'DOB', 'Registration Timestamp']);
+    }
+
+    // Current server timestamp for this registration
+    $registrationTimestamp = date('Y-m-d H:i:s');
+
+    // Write the row
+    fputcsv($fh, [$name, $email, $dateOfBirth, $registrationTimestamp]);
+    fclose($fh);
+
+    return [
+        'path' => $csvPath,
+        'created' => $isNew,
+        'written' => true,
+    ];
+}
+
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -71,9 +161,9 @@ if (!$admin) {
 // Get and validate input data
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Required fields - simplified to only email, date_of_birth, face_image, and election_id
+// Required fields - include name so admin can set full name explicitly
 $requiredFields = [
-    'email', 'date_of_birth', 'face_image', 'election_id'
+    'name', 'email', 'date_of_birth', 'face_image', 'election_id'
 ];
 
 foreach ($requiredFields as $field) {
@@ -84,6 +174,7 @@ foreach ($requiredFields as $field) {
 }
 
 // Extract and validate data
+$name = isset($data['name']) ? trim($data['name']) : '';
 $email = strtolower(trim($data['email']));
 $dateOfBirth = $data['date_of_birth'];
 $faceImage = $data['face_image'];
@@ -109,8 +200,10 @@ try {
     exit;
 }
 
-// Generate a default name from email (first part before @)
-$name = ucfirst(explode('@', $email)[0]);
+// Use provided name, or fallback to default from email (first part before @)
+if (empty($name)) {
+    $name = ucfirst(explode('@', $email)[0]);
+}
 
 // Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -457,6 +550,15 @@ try {
     // Commit transaction
     $pdo->commit();
     
+    // Write/append CSV for this election (non-blocking if it fails)
+    $csvStatus = ['written' => false];
+    try {
+        $csvStatus = appendVoterToCsv($election['title'] ?? '', $electionId, $name, $email, $dateOfBirth);
+    } catch (Exception $csvEx) {
+        $csvStatus['error'] = $csvEx->getMessage();
+        error_log("CSV export failed for election {$electionId}: " . $csvEx->getMessage());
+    }
+    
     $loginUrl = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/auth';
     
     // Send email with credentials
@@ -480,7 +582,8 @@ try {
         'data' => [
             'email' => $email,
             'email_sent' => $emailSent,
-            'user_id' => $userId
+            'user_id' => $userId,
+            'csv_status' => $csvStatus
         ]
     ];
     

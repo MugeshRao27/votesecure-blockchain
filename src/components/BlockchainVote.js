@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   connectWallet,
   isMetaMaskInstalled,
-  switchToPolygonMumbai,
+  switchToConfiguredNetwork,
   getCurrentAccount,
   recordVoteOnBlockchain,
   checkIfVoted,
@@ -62,8 +62,8 @@ const BlockchainVote = ({ electionId, candidateId, userId, onVoteSuccess, onVote
         return;
       }
 
-      // Switch to Polygon Mumbai
-      await switchToPolygonMumbai();
+      // Switch to configured network (defaults to Amoy)
+      await switchToConfiguredNetwork();
 
       // Connect wallet
       const address = await connectWallet();
@@ -111,7 +111,8 @@ const BlockchainVote = ({ electionId, candidateId, userId, onVoteSuccess, onVote
         }
 
         // Show success message
-        alert(`Vote recorded successfully!\nTransaction: ${result.transactionHash}\nView on PolygonScan: https://mumbai.polygonscan.com/tx/${result.transactionHash}`);
+        const explorer = process.env.REACT_APP_BLOCK_EXPLORER || 'https://amoy.polygonscan.com';
+        alert(`Vote recorded successfully!\nTransaction: ${result.transactionHash}\nView on Explorer: ${explorer}/tx/${result.transactionHash}`);
       }
     } catch (err) {
       const errorMessage = err.message || 'Failed to record vote on blockchain';
@@ -172,7 +173,9 @@ const BlockchainVote = ({ electionId, candidateId, userId, onVoteSuccess, onVote
     <div className="blockchain-vote-container">
       <div className="blockchain-header">
         <h3>🔗 Blockchain Voting</h3>
-        <p className="blockchain-subtitle">Your vote will be recorded on Polygon blockchain</p>
+        <p className="blockchain-subtitle">
+          Your vote will be recorded on {process.env.REACT_APP_POLYGON_RPC?.includes('localhost') || process.env.REACT_APP_POLYGON_RPC?.includes('127.0.0.1') ? 'local blockchain' : 'Polygon blockchain'}
+        </p>
       </div>
 
       {!walletConnected ? (

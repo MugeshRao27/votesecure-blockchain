@@ -108,6 +108,44 @@
   font-family: inherit;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 16px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+  outline: none;
+}
+
+.password-toggle-btn:hover {
+  color: #0056b3;
+}
+
+.password-toggle-btn:focus {
+  color: #0056b3;
+  outline: 2px solid rgba(0, 86, 179, 0.3);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   border-color: #0056b3;

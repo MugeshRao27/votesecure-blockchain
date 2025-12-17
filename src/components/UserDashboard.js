@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FaceVerification from "./FaceVerification";
+import BlockchainVote from "./BlockchainVote";
 import "./UserDashboard.css";
 import { tokenManager } from "../utils/api";
+import { recordVoteOnBlockchain } from "../utils/blockchain";
 
 const API_BASE = "http://localhost/final_votesecure/backend/api";
 
@@ -79,6 +81,8 @@ const UserDashboard = () => {
   const [voteHistory, setVoteHistory] = useState([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showBlockchainVote, setShowBlockchainVote] = useState(false);
+  const [blockchainVoteCandidateId, setBlockchainVoteCandidateId] = useState(null);
 
   // Load user from localStorage
   useEffect(() => {
@@ -342,7 +346,38 @@ const UserDashboard = () => {
         return;
       }
 
-      // If face verified, proceed with voting (mapping-aware endpoint)
+      // Blockchain recording is REQUIRED - vote will not be saved if blockchain fails
+      // This ensures vote is only counted if successfully recorded on blockchain
+      // Same wallet can vote multiple times (for different users/elections)
+      let blockchainTxHash = null;
+      let voteHash = null;
+      try {
+        // This will trigger MetaMask popup if wallet is not connected
+        // and then another popup for the transaction
+        const chainResult = await recordVoteOnBlockchain(
+          selectedElection.id,
+          pendingCandidateId,
+          user.id
+        );
+        blockchainTxHash = chainResult.transactionHash;
+        voteHash = chainResult.voteHash;
+        console.log('✅ Blockchain vote recorded:', chainResult.transactionHash);
+      } catch (err) {
+        // If blockchain fails, STOP - don't save vote in database
+        // This ensures vote is only counted if blockchain transaction succeeds
+        const errorMsg = err.message || 'Blockchain recording failed';
+        console.error('Blockchain recording failed - vote will not be saved:', errorMsg);
+        // Check if it's a user rejection
+        if (errorMsg.includes('rejected') || errorMsg.includes('denied')) {
+          alert(`⚠️ Transaction Cancelled\n\nYou cancelled the MetaMask transaction. To complete your vote:\n\n1. Click "Confirm" or "Approve" in MetaMask when the popup appears\n2. Wait for the transaction to complete\n3. Your vote will then be saved\n\nNote: Your vote is NOT saved until you confirm the transaction.`);
+        } else {
+          alert(`❌ Vote recording failed: ${errorMsg}\n\nYour vote was not saved. Please try again.`);
+        }
+        setLoading(false);
+        return; // Stop here - don't proceed with database vote
+      }
+
+      // Proceed with voting (mapping-aware endpoint) and include blockchain tx info
       const response = await authFetch(`${API_BASE}/cast-vote.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -350,6 +385,8 @@ const UserDashboard = () => {
           user_id: user.id,
           candidate_id: pendingCandidateId,
           election_id: selectedElection.id,
+          blockchain_tx_hash: blockchainTxHash,
+          vote_hash: voteHash,
         }),
       });
 
@@ -380,11 +417,17 @@ const UserDashboard = () => {
       }
 
       if (data.success) {
-        alert("✅ Match found! Vote submitted successfully. Thank you for voting.");
+        // Show success message with blockchain transaction link
+        // Note: We only reach here if blockchain recording succeeded
+        const explorer = process.env.REACT_APP_BLOCK_EXPLORER || 'https://amoy.polygonscan.com';
+        const txUrl = `${explorer}/tx/${blockchainTxHash}`;
+        const successMessage = `✅ Match found! Your identity has been verified and your vote has been securely recorded.\n\nClick “Confirm Transaction” to see the confirmed record of your vote.`;
+        alert(successMessage);
         setHasVoted(true);
-        setSelectedElection(null);
-        setCandidates([]);
-        setPendingCandidateId(null);
+        
+        // Show blockchain voting option after successful database vote
+        setBlockchainVoteCandidateId(pendingCandidateId);
+        setShowBlockchainVote(true);
         
         // Refresh elections list
         const res = await authFetch(`${API_BASE}/get-authorized-elections.php?user_id=${user.id}`);
@@ -824,6 +867,43 @@ const UserDashboard = () => {
                     </div>
                   ))}
                 </div>
+                
+                {/* Blockchain Voting Section */}
+                {showBlockchainVote && selectedElection && blockchainVoteCandidateId && (
+                  <div className="blockchain-section" style={{ marginTop: '2rem', padding: '1.5rem', border: '2px solid #4CAF50', borderRadius: '8px', backgroundColor: '#f0f9f0' }}>
+                    <h3 style={{ marginBottom: '1rem', color: '#2e7d32' }}>🔗 Record Your Vote on Blockchain</h3>
+                    <p style={{ marginBottom: '1rem', color: '#555' }}>
+                      Your vote has been recorded in the database. Now you can also record it on the blockchain for additional security and transparency.
+                    </p>
+                    <BlockchainVote
+                      electionId={selectedElection.id}
+                      candidateId={blockchainVoteCandidateId}
+                      userId={user.id}
+                      onVoteSuccess={(result) => {
+                        console.log('Blockchain vote recorded:', result);
+                        alert(`✅ Vote recorded on blockchain!\nTransaction: ${result.transactionHash}\n\nYour vote is now immutable on the blockchain.`);
+                        setShowBlockchainVote(false);
+                        setBlockchainVoteCandidateId(null);
+                      }}
+                      onVoteError={(error) => {
+                        console.error('Blockchain vote error:', error);
+                        // Don't show error alert - user can try again or skip
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        setShowBlockchainVote(false);
+                        setBlockchainVoteCandidateId(null);
+                        setSelectedElection(null);
+                        setCandidates([]);
+                        setPendingCandidateId(null);
+                      }}
+                      style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#666', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      Skip Blockchain Recording
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

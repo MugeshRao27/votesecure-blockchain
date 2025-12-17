@@ -19,7 +19,14 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "download-models": "node download-models.js"
+    "download-models": "node download-models.js",
+    "hardhat": "hardhat",
+    "local-node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.17"
   },
   "eslintConfig": {
     "extends": [

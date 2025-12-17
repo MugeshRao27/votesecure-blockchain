@@ -18,6 +18,7 @@ const AuthPage = () => {
   const [pendingLoginToken, setPendingLoginToken] = useState("");
   const [pendingJwt, setPendingJwt] = useState("");
   const [pendingUser, setPendingUser] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   // COMMENTED OUT - Password change functionality removed
   // const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
@@ -360,14 +361,24 @@ const AuthPage = () => {
 
       <div className="form-group">
         <label>{role === "admin" ? "Admin Password" : "Temporary Password"}</label>
-        <input
-          type="password"
-          value={formState.password}
-          onChange={(e) =>
-            setFormState((prev) => ({ ...prev, password: e.target.value }))
-          }
-          required
-        />
+        <div className="password-input-wrapper">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={formState.password}
+            onChange={(e) =>
+              setFormState((prev) => ({ ...prev, password: e.target.value }))
+            }
+            required
+          />
+          <button
+            type="button"
+            className="password-toggle-btn"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+          </button>
+        </div>
       </div>
 
       {role === "voter" && (

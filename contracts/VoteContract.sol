@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.8.19 <0.9.0;
 
 /**
  * @title VoteContract
@@ -39,19 +39,18 @@ contract VoteContract {
     function recordVote(uint256 electionId, bytes32 voteHash) public {
         require(electionId > 0, "Invalid election ID");
         require(voteHash != bytes32(0), "Invalid vote hash");
-        require(!hasVoted[electionId][msg.sender], "Already voted in this election");
+        // Removed hasVoted check to allow same wallet to vote multiple times
+        // Database enforces one vote per user_id, blockchain allows multiple votes per wallet
+        // This allows different users to use the same wallet address
 
-        // Record the vote
+        // Record the vote (overwrites previous vote from same wallet for this election)
         votes[electionId][msg.sender] = Vote({
             voteHash: voteHash,
             timestamp: block.timestamp,
             voter: msg.sender
         });
 
-        // Mark as voted
-        hasVoted[electionId][msg.sender] = true;
-
-        // Add to election votes array
+        // Always add to election votes array (allows multiple votes from same wallet)
         electionVotes[electionId].push(voteHash);
 
         // Emit event

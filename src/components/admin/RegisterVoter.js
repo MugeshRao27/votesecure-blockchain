@@ -11,6 +11,7 @@ const CDN_MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 
 function RegisterVoter() {
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     date_of_birth: "",
     election_id: "",
@@ -408,6 +409,11 @@ function RegisterVoter() {
   const validateForm = () => {
     const errors = {};
     
+    // Validate name
+    if (!formData.name.trim()) {
+      errors.name = "Name is required";
+    }
+
     // Validate email
     if (!formData.email.trim()) {
       errors.email = "Email is required";
@@ -471,6 +477,7 @@ function RegisterVoter() {
       }
       
       console.log("Submitting registration with:", {
+        name: formData.name,
         email: formData.email,
         date_of_birth: formData.date_of_birth,
         election_id: formData.election_id,
@@ -484,6 +491,7 @@ function RegisterVoter() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
+          name: formData.name,
           email: formData.email,
           date_of_birth: formData.date_of_birth,
           election_id: formData.election_id,
@@ -515,6 +523,7 @@ function RegisterVoter() {
       
       setSuccess("Voter registered successfully! Login credentials have been sent to the voter's email.");
       setFormData({
+        name: "",
         email: "",
         date_of_birth: "",
         election_id: "",
@@ -551,6 +560,18 @@ function RegisterVoter() {
       {success && <div className="success-message">{success}</div>}
       
       <form onSubmit={handleSubmit} className="voter-form">
+        <div className="form-group">
+          <label>Name *</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Full name"
+            required
+          />
+        </div>
+
         <div className="form-group">
           <label>Email *</label>
           <input

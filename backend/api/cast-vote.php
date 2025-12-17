@@ -1,6 +1,8 @@
 <?php
 require_once 'config.php';
 require_once 'auth-helper.php';
+require_once __DIR__ . '/encryption-helper.php';
+require_once __DIR__ . '/../blockchain-helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -15,6 +17,8 @@ $data = json_decode(file_get_contents('php://input'), true);
 $user_id = $authUser['user_id']; // Use authenticated user ID from JWT
 $election_id = $data['election_id'] ?? 0;
 $candidate_id = $data['candidate_id'] ?? 0;
+$providedTxHash = $data['blockchain_tx_hash'] ?? null;
+$providedVoteHash = $data['vote_hash'] ?? null;
 
 if (empty($election_id) || empty($candidate_id)) {
     echo json_encode(['success' => false, 'message' => 'Election and candidate are required']);
@@ -273,6 +277,39 @@ try {
     // ========================================
     // All checks passed - Cast vote
     // ========================================
+    
+    // Initialize encryption and blockchain helpers
+    $encryptionHelper = new EncryptionHelper();
+    $blockchainHelper = new BlockchainHelper($pdo);
+    
+    // Prepare vote data for encryption
+    $voteData = [
+        'election_id' => $election_id,
+        'candidate_id' => $candidate_id,
+        'user_id' => $user_id,
+        'timestamp' => time(),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    // Encrypt vote data
+    $encryptedVote = $encryptionHelper->encryptVote($voteData);
+    
+    // Use provided vote hash/tx hash from frontend if available (MetaMask flow), else generate and attempt backend chain write
+    $voteHash = $providedVoteHash ?: $encryptionHelper->generateVoteHash($election_id, $candidate_id, $user_id);
+
+    if (!empty($providedTxHash)) {
+        // Frontend already recorded on-chain via MetaMask
+        $blockchainResult = [
+            'success' => true,
+            'transaction_hash' => $providedTxHash,
+            'vote_hash' => $voteHash,
+            'skipped' => true
+        ];
+    } else {
+        // Record vote on the blockchain from backend (may be skipped if not configured)
+        $blockchainResult = $blockchainHelper->recordVote($user_id, $election_id, $candidate_id);
+    }
+    
     // Check if votes table uses user_id or voter_id column
     $checkColumn = $pdo->query("
         SELECT COLUMN_NAME 
@@ -285,19 +322,97 @@ try {
     $columnInfo = $checkColumn->fetch(PDO::FETCH_ASSOC);
     $userIdColumn = $columnInfo['COLUMN_NAME'] ?? 'user_id'; // Default to user_id
     
-    // Insert vote using the correct column name
-    $vstmt = $pdo->prepare("INSERT INTO votes ({$userIdColumn}, candidate_id, election_id) VALUES (?, ?, ?)");
-    $vstmt->execute([$user_id, $candidate_id, $election_id]);
+    // Check if votes table has encrypted_data column, add if not
+    $checkEncryptedColumn = $pdo->query("
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = 'votes' 
+        AND COLUMN_NAME = 'encrypted_data'
+    ");
+    
+    if ($checkEncryptedColumn->rowCount() === 0) {
+        // Add encrypted_data column and related fields
+        try {
+            $pdo->exec("
+                ALTER TABLE votes 
+                ADD COLUMN encrypted_data TEXT NULL,
+                ADD COLUMN encryption_iv VARCHAR(255) NULL,
+                ADD COLUMN encryption_tag VARCHAR(255) NULL,
+                ADD COLUMN vote_hash VARCHAR(64) NULL,
+                ADD COLUMN blockchain_tx_hash VARCHAR(66) NULL,
+                ADD INDEX idx_vote_hash (vote_hash)
+            ");
+        } catch (PDOException $e) {
+            // Column might already exist or error occurred - log and continue
+            error_log("Note: Could not add encryption columns (may already exist): " . $e->getMessage());
+        }
+    }
+    
+    // Insert vote with encrypted data
+    $vstmt = $pdo->prepare("
+        INSERT INTO votes (
+            {$userIdColumn}, 
+            candidate_id, 
+            election_id, 
+            encrypted_data, 
+            encryption_iv, 
+            encryption_tag, 
+            vote_hash, 
+            blockchain_tx_hash,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    ");
+    $vstmt->execute([
+        $user_id, 
+        $candidate_id, 
+        $election_id,
+        $encryptedVote['encrypted_data'],
+        $encryptedVote['iv'],
+        $encryptedVote['tag'],
+        $voteHash,
+        $blockchainResult['transaction_hash'] ?? null
+    ]);
 
     // Mark has_voted = 1 in mapping
     $upd = $pdo->prepare("UPDATE election_voter_authorization SET has_voted = 1 WHERE user_id = ? AND election_id = ?");
     $upd->execute([$user_id, $election_id]);
 
+    // Log the vote
+    logVoterActivity(
+        $pdo, 
+        $user_id, 
+        'vote_cast', 
+        'success', 
+        "Voted for candidate $candidate_id in election $election_id" . 
+        ($blockchainResult['transaction_hash'] ? " (Blockchain TX: " . substr($blockchainResult['transaction_hash'], 0, 10) . "...)" : "")
+    );
+
     $pdo->commit();
-    echo json_encode([
+    
+    // Prepare response
+    $response = [
         'success' => true, 
-        'message' => 'Vote submitted successfully'
-    ]);
+        'message' => 'Vote submitted successfully',
+        'vote_hash' => $voteHash
+    ];
+    
+    // Add blockchain info if available
+    if ($blockchainResult['success'] && !empty($blockchainResult['transaction_hash'])) {
+        $response['blockchain'] = [
+            'transaction_hash' => $blockchainResult['transaction_hash'],
+            'vote_hash' => $blockchainResult['vote_hash'] ?? $voteHash,
+            'source' => isset($blockchainResult['skipped']) && $blockchainResult['skipped'] ? 'frontend' : 'backend'
+        ];
+    } elseif (isset($blockchainResult['skipped']) && $blockchainResult['skipped']) {
+        $response['blockchain'] = [
+            'status' => 'skipped',
+            'message' => 'Blockchain recording skipped (not configured)',
+            'vote_hash' => $voteHash
+        ];
+    }
+    
+    echo json_encode($response);
     
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();

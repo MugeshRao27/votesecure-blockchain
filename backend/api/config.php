@@ -76,6 +76,36 @@ if (!getenv('MAILGUN_API_KEY')) {
 }
 
 // ============================================
+// BLOCKCHAIN CONFIGURATION
+// ============================================
+// Polygon RPC (Amoy testnet)
+// Switch to mainnet or other testnets by updating this value and chain id accordingly
+putenv('POLYGON_RPC_URL=https://rpc-amoy.polygon.technology'); // Amoy testnet RPC
+putenv('POLYGON_CONTRACT_ADDRESS=0xa9AdE7C396b4FC5d340D7A10D34a84a3906471CB'); // Deployed on Amoy
+
+// Optional: Private key for backend blockchain transactions
+// Note: For security, use frontend MetaMask integration instead
+if (!getenv('BLOCKCHAIN_PRIVATE_KEY')) {
+    putenv('BLOCKCHAIN_PRIVATE_KEY='); // Leave empty to use frontend MetaMask
+}
+
+// ============================================
+// ENCRYPTION CONFIGURATION
+// ============================================
+// Vote encryption key - MUST be set in production!
+// Generate a secure key: openssl rand -hex 32
+if (!getenv('VOTE_ENCRYPTION_KEY')) {
+    // Default key for development (CHANGE IN PRODUCTION!)
+    $defaultKey = hash('sha256', 'votesecure_default_encryption_key_change_in_production_' . date('Y'));
+    putenv('VOTE_ENCRYPTION_KEY=' . $defaultKey);
+}
+
+// Application secret for additional security
+if (!getenv('APP_SECRET')) {
+    putenv('APP_SECRET=votesecure_app_secret_change_in_production');
+}
+
+// ============================================
 // IMPORTANT: Update the email settings above
 // with your actual email credentials!
 // ============================================
